@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "Saudi Arabia Geocoding SDK",
-    "appDescription": "Browser-based geocoding for Saudi Arabia using DuckDB-WASM",
+    "appName": "Saudi Arabia Geocoding",
+    "appDescription": "Browser-based geocoding for Saudi Arabia",
     "loading": "Loading...",
     "error": "Error",
     "search": "Search",
@@ -10,9 +10,9 @@
   },
   "playground": {
     "title": "Interactive Playground",
-    "description": "Test all SDK features in one place",
-    "initializing": "Initializing SDK...",
-    "ready": "SDK Ready",
+    "description": "Test all geocoding features in one place",
+    "initializing": "Loading...",
+    "ready": "Ready",
     "clickMap": "Click on map or use search tools",
     "tabs": {
       "forward": "Forward Geocode",
