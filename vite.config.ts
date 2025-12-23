@@ -11,5 +11,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: "/geocoding-playground/",
+  // Use "/" for custom domain, "/geocoding-playground/" for GitHub Pages subdirectory
+  // Set VITE_BASE_PATH env var in CI or use default "/"
+  base: process.env.VITE_BASE_PATH || "/",
 });

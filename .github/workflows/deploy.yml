@@ -31,6 +31,13 @@ jobs:
 
       - name: Build
         run: bun run build
+        # Base path "/" for custom domain (geocode-saudi.tabaqat.dev)
+        # Change to VITE_BASE_PATH="/geocoding-playground/" for GitHub Pages subdirectory
+        env:
+          VITE_BASE_PATH: "/"
+
+      - name: Add CNAME for custom domain
+        run: echo "geocode-saudi.tabaqat.dev" > dist/CNAME
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
