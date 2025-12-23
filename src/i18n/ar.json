@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "SDK الترميز الجغرافي للمملكة العربية السعودية",
+    "appDescription": "ترميز جغرافي في المتصفح باستخدام DuckDB-WASM",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "search": "بحث",
+    "results": "النتائج",
+    "noResults": "لم يتم العثور على نتائج"
+  },
+  "playground": {
+    "title": "التجربة التفاعلية",
+    "description": "اختبر جميع ميزات SDK في مكان واحد",
+    "initializing": "جاري تهيئة SDK...",
+    "ready": "SDK جاهز",
+    "clickMap": "انقر على الخريطة أو استخدم أدوات البحث",
+    "tabs": {
+      "forward": "ترميز أمامي",
+      "reverse": "ترميز عكسي",
+      "postcode": "رمز بريدي",
+      "number": "رقم المبنى"
+    }
+  },
+  "docs": {
+    "forwardGeocoding": {
+      "addressPlaceholder": "أدخل عنوان (مثال: حي الروضة الرياض)"
+    },
+    "postcodeSearch": {
+      "postcodePlaceholder": "أدخل الرمز البريدي (مثال: 13847)"
+    },
+    "houseNumber": {
+      "numberPlaceholder": "أدخل رقم المبنى",
+      "regionFilter": "تصفية حسب المنطقة"
+    }
+  },
+  "regions": {
+    "all": "جميع المناطق",
+    "riyadh": "منطقة الرياض",
+    "makkah": "منطقة مكة المكرمة",
+    "eastern": "المنطقة الشرقية",
+    "madinah": "منطقة المدينة المنورة",
+    "qassim": "منطقة القصيم",
+    "asir": "منطقة عسير",
+    "jazan": "منطقة جازان",
+    "tabuk": "منطقة تبوك",
+    "hail": "منطقة حائل",
+    "najran": "منطقة نجران",
+    "jawf": "منطقة الجوف",
+    "bahah": "منطقة الباحة",
+    "northern": "منطقة الحدود الشمالية"
+  },
+  "header": {
+    "language": "اللغة",
+    "theme": "المظهر"
+  }
+}

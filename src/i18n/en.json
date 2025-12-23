@@ -1,0 +1,56 @@
+{
+  "common": {
+    "appName": "Saudi Arabia Geocoding SDK",
+    "appDescription": "Browser-based geocoding for Saudi Arabia using DuckDB-WASM",
+    "loading": "Loading...",
+    "error": "Error",
+    "search": "Search",
+    "results": "Results",
+    "noResults": "No results found"
+  },
+  "playground": {
+    "title": "Interactive Playground",
+    "description": "Test all SDK features in one place",
+    "initializing": "Initializing SDK...",
+    "ready": "SDK Ready",
+    "clickMap": "Click on map or use search tools",
+    "tabs": {
+      "forward": "Forward Geocode",
+      "reverse": "Reverse Geocode",
+      "postcode": "Postcode Search",
+      "number": "House Number"
+    }
+  },
+  "docs": {
+    "forwardGeocoding": {
+      "addressPlaceholder": "Enter an address (e.g., حي الروضة الرياض)"
+    },
+    "postcodeSearch": {
+      "postcodePlaceholder": "Enter postcode (e.g., 13847)"
+    },
+    "houseNumber": {
+      "numberPlaceholder": "Enter house number",
+      "regionFilter": "Filter by Region"
+    }
+  },
+  "regions": {
+    "all": "All Regions",
+    "riyadh": "Riyadh Region",
+    "makkah": "Makkah Region",
+    "eastern": "Eastern Province",
+    "madinah": "Madinah Region",
+    "qassim": "Qassim Region",
+    "asir": "Asir Region",
+    "jazan": "Jazan Region",
+    "tabuk": "Tabuk Region",
+    "hail": "Hail Region",
+    "najran": "Najran Region",
+    "jawf": "Al Jawf Region",
+    "bahah": "Al Bahah Region",
+    "northern": "Northern Borders Region"
+  },
+  "header": {
+    "language": "Language",
+    "theme": "Theme"
+  }
+}
