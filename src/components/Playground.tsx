@@ -3,6 +3,7 @@ import Map, {
   Marker,
   Popup,
   NavigationControl,
+  AttributionControl,
   type MapLayerMouseEvent,
   type MapRef,
 } from "react-map-gl/maplibre";
@@ -382,8 +383,13 @@ export function Playground() {
           mapStyle={mapStyle}
           onClick={initialized ? handleMapClick : undefined}
           cursor={initialized ? "crosshair" : "default"}
+          attributionControl={false}
         >
           <NavigationControl position="top-right" />
+          <AttributionControl
+            compact={true}
+            customAttribution='<a href="https://tabaqat.net" target="_blank">Tabaqat</a>'
+          />
 
           {/* Click marker (primary) */}
           {clickMarker && (
@@ -459,33 +465,33 @@ export function Playground() {
         {/* Admin Hierarchy Overlay */}
         {adminHierarchy && (
           <div
-            className="absolute bottom-4 right-4 z-10 bg-background/90 backdrop-blur rounded-lg px-3 py-2 text-xs space-y-1 max-w-[250px]"
+            className="absolute bottom-10 right-4 z-10 bg-background/90 backdrop-blur rounded-lg px-4 py-3 text-sm space-y-1.5 max-w-[280px]"
             dir={language === "ar" ? "rtl" : "ltr"}
           >
-            <div className="font-semibold text-muted-foreground mb-1">
+            <div className="font-semibold text-muted-foreground mb-2">
               {language === "ar" ? "التسلسل الإداري" : "Admin Hierarchy"}
             </div>
             {adminHierarchy.country && (
-              <div className="flex items-center gap-1">
-                <Layers className="w-3 h-3 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-muted-foreground" />
                 <span className="font-medium">{adminHierarchy.country}</span>
               </div>
             )}
             {adminHierarchy.region && (
-              <div className="flex items-center gap-1 ml-4">
-                <span className="text-muted-foreground">→</span>
+              <div className="flex items-center gap-2 ms-5">
+                <span className="text-muted-foreground">←</span>
                 <span>{adminHierarchy.region}</span>
               </div>
             )}
             {adminHierarchy.governorate && (
-              <div className="flex items-center gap-1 ml-6">
-                <span className="text-muted-foreground">→</span>
+              <div className="flex items-center gap-2 ms-7">
+                <span className="text-muted-foreground">←</span>
                 <span>{adminHierarchy.governorate}</span>
               </div>
             )}
             {adminHierarchy.district && (
-              <div className="flex items-center gap-1 ml-8">
-                <span className="text-muted-foreground">→</span>
+              <div className="flex items-center gap-2 ms-9">
+                <span className="text-muted-foreground">←</span>
                 <span>{adminHierarchy.district}</span>
               </div>
             )}
