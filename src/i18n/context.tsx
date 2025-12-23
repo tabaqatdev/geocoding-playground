@@ -35,13 +35,11 @@ function getNestedValue(obj: NestedTranslations, path: string): string {
 }
 
 function getSystemLanguage(): Language {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "ar";
   const stored = localStorage.getItem("language") as Language;
   if (stored === "en" || stored === "ar") return stored;
-  // Check browser language
-  const browserLang = navigator.language.toLowerCase();
-  if (browserLang.startsWith("ar")) return "ar";
-  return "en";
+  // Default to Arabic for Saudi Arabia geocoding app
+  return "ar";
 }
 
 interface LanguageProviderProps {
