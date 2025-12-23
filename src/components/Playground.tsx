@@ -54,7 +54,7 @@ const MAP_STYLES = {
 
 // RTL text plugin URL
 const RTL_PLUGIN_URL =
-  "https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.2.3/mapbox-gl-rtl-text.min.js";
+  "https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js";
 
 // Default zoom level for fly-to animations
 const DEFAULT_FLYTO_ZOOM = 18;
