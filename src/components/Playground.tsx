@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Loader2,
   RotateCcw,
@@ -35,6 +36,10 @@ import {
   AlertCircle,
   Search,
   Layers,
+  Trash2,
+  Zap,
+  Database,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -78,9 +83,22 @@ export function Playground() {
 
   // Forward geocoding state
   const [forwardQuery, setForwardQuery] = useState("");
-  const [forwardRegion, setForwardRegion] = useState("");
   const [forwardResults, setForwardResults] = useState<GeocodingResult[]>([]);
   const [forwardLoading, setForwardLoading] = useState(false);
+  const [searchMethod, setSearchMethod] = useState<"standard" | "cached" | "smart">("cached");
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<
+    Array<{
+      type: "district" | "region" | "postcode";
+      value: string;
+      label_ar: string;
+      label_en: string;
+    }>
+  >([]);
+
+  // Search scope options
+  const [useBboxScope, setUseBboxScope] = useState(true);
+  const [useRegionScope, setUseRegionScope] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState("");
 
   // Reverse geocoding state
   const [reverseLat, setReverseLat] = useState("24.7136");
@@ -99,6 +117,7 @@ export function Playground() {
   // House number search state
   const [houseNumber, setHouseNumber] = useState("");
   const [houseRegion, setHouseRegion] = useState("");
+  const [useHouseBboxScope, setUseHouseBboxScope] = useState(false);
   const [houseResults, setHouseResults] = useState<GeocodingResult[]>([]);
   const [houseLoading, setHouseLoading] = useState(false);
 
@@ -134,6 +153,37 @@ export function Playground() {
     if (!sdk || !postcodeQuery || selectedPostcode) return [];
     return sdk.getPostcodes(postcodeQuery).slice(0, 15);
   }, [sdk, postcodeQuery, selectedPostcode]);
+
+  // Fetch autocomplete suggestions for forward geocoding (debounced)
+  useEffect(() => {
+    if (!sdk || !forwardQuery || forwardQuery.length < 2) {
+      setAutocompleteSuggestions([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const suggestions = await (sdk as any).getAutocompleteSuggestions(forwardQuery, {
+          limit: 8,
+          types: "all",
+        });
+        setAutocompleteSuggestions(suggestions || []);
+      } catch {
+        setAutocompleteSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [sdk, forwardQuery]);
+
+  // Handle cache clear
+  const handleClearCache = useCallback(() => {
+    if (!sdk) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sdk as any).clearCache?.();
+    toast.success(language === "ar" ? "تم مسح ذاكرة التخزين المؤقت" : "Cache cleared");
+  }, [sdk, language]);
 
   // Handle map click for reverse geocoding
   const handleMapClick = useCallback(
@@ -261,16 +311,48 @@ export function Playground() {
   const handleForwardGeocode = async () => {
     if (!sdk || !forwardQuery.trim()) return;
     setForwardLoading(true);
+    setAutocompleteSuggestions([]); // Clear suggestions on search
     try {
-      const bbox = mapRef?.getBounds();
-      const results = await sdk.geocode(forwardQuery, {
-        limit: 10,
-        bbox: bbox ? [bbox.getSouth(), bbox.getWest(), bbox.getNorth(), bbox.getEast()] : undefined,
-        regions: forwardRegion ? [forwardRegion] : undefined,
-      });
+      const bounds = mapRef?.getBounds();
+      const bbox =
+        useBboxScope && bounds
+          ? ([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()] as [
+              number,
+              number,
+              number,
+              number,
+            ])
+          : undefined;
+      const regions = useRegionScope && selectedRegion ? [selectedRegion] : undefined;
+
+      const options = { limit: 10, bbox, regions };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sdkAny = sdk as any;
+      let results: GeocodingResult[];
+      let methodUsed: string;
+
+      switch (searchMethod) {
+        case "smart":
+          results = await sdkAny.smartGeocode(forwardQuery, options);
+          methodUsed = "Smart";
+          break;
+        case "cached":
+          results = await sdkAny.geocodeCached(forwardQuery, options);
+          methodUsed = "Cached";
+          break;
+        default:
+          results = await sdk.geocode(forwardQuery, options);
+          methodUsed = "Standard";
+      }
+
       setForwardResults(results);
       showResultsOnMap(results);
-      toast.success(`Found ${results.length} results`);
+      toast.success(
+        language === "ar"
+          ? `تم العثور على ${results.length} نتيجة (${methodUsed})`
+          : `Found ${results.length} results (${methodUsed})`
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Search failed");
     } finally {
@@ -322,13 +404,29 @@ export function Playground() {
     if (!sdk || !houseNumber.trim()) return;
     setHouseLoading(true);
     try {
+      const bounds = mapRef?.getBounds();
+      const bbox =
+        useHouseBboxScope && bounds
+          ? ([bounds.getSouth(), bounds.getWest(), bounds.getNorth(), bounds.getEast()] as [
+              number,
+              number,
+              number,
+              number,
+            ])
+          : undefined;
+
       const results = await sdk.searchByNumber(houseNumber, {
         limit: 20,
         region: houseRegion || undefined,
+        bbox,
       });
       setHouseResults(results);
       showResultsOnMap(results);
-      toast.success(`Found ${results.length} addresses`);
+      toast.success(
+        language === "ar"
+          ? `تم العثور على ${results.length} عنوان`
+          : `Found ${results.length} addresses`
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "House number search failed");
     } finally {
@@ -560,51 +658,182 @@ export function Playground() {
                   {/* Forward Geocoding Tab */}
                   <TabsContent value="forward" className="m-0 p-4 data-[state=active]:block">
                     <div className="space-y-3">
-                      <Select
-                        value={forwardRegion || "all"}
-                        onValueChange={(v) => setForwardRegion(v === "all" ? "" : v)}
-                      >
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder={t("docs.houseNumber.regionFilter")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">{t("regions.all")}</SelectItem>
-                          <SelectItem value="منطقة الرياض">{t("regions.riyadh")}</SelectItem>
-                          <SelectItem value="منطقة مكة المكرمة">{t("regions.makkah")}</SelectItem>
-                          <SelectItem value="المنطقة الشرقية">{t("regions.eastern")}</SelectItem>
-                          <SelectItem value="منطقة المدينة المنورة">
-                            {t("regions.madinah")}
-                          </SelectItem>
-                          <SelectItem value="منطقة القصيم">{t("regions.qassim")}</SelectItem>
-                          <SelectItem value="منطقة عسير">{t("regions.asir")}</SelectItem>
-                          <SelectItem value="منطقة جازان">{t("regions.jazan")}</SelectItem>
-                          <SelectItem value="منطقة تبوك">{t("regions.tabuk")}</SelectItem>
-                          <SelectItem value="منطقة حائل">{t("regions.hail")}</SelectItem>
-                          <SelectItem value="منطقة نجران">{t("regions.najran")}</SelectItem>
-                          <SelectItem value="منطقة الجوف">{t("regions.jawf")}</SelectItem>
-                          <SelectItem value="منطقة الباحة">{t("regions.bahah")}</SelectItem>
-                          <SelectItem value="منطقة الحدود الشمالية">
-                            {t("regions.northern")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder={t("docs.forwardGeocoding.addressPlaceholder")}
-                          value={forwardQuery}
-                          onChange={(e) => setForwardQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleForwardGeocode()}
-                          dir="auto"
-                          className="text-sm"
-                        />
-                        <Button onClick={handleForwardGeocode} disabled={forwardLoading} size="sm">
-                          {forwardLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Search className="h-4 w-4" />
-                          )}
+                      <div className="relative">
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={t("docs.forwardGeocoding.addressPlaceholder")}
+                            value={forwardQuery}
+                            onChange={(e) => setForwardQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleForwardGeocode()}
+                            dir="auto"
+                            className="text-sm"
+                          />
+                          <Button
+                            onClick={handleForwardGeocode}
+                            disabled={forwardLoading}
+                            size="sm"
+                          >
+                            {forwardLoading ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Search className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {/* Autocomplete Suggestions Dropdown */}
+                        {autocompleteSuggestions.length > 0 && (
+                          <Card className="absolute top-full left-0 right-0 mt-1 z-20 max-h-[200px] overflow-auto">
+                            <div className="p-1">
+                              {autocompleteSuggestions.map((suggestion, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => {
+                                    setForwardQuery(
+                                      language === "ar" ? suggestion.label_ar : suggestion.label_en
+                                    );
+                                    setAutocompleteSuggestions([]);
+                                  }}
+                                  className="w-full text-left px-2 py-1.5 rounded text-sm hover:bg-accent flex justify-between items-center"
+                                  dir="auto"
+                                >
+                                  <span>
+                                    {language === "ar" ? suggestion.label_ar : suggestion.label_en}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {suggestion.type === "district"
+                                      ? language === "ar"
+                                        ? "حي"
+                                        : "District"
+                                      : suggestion.type === "postcode"
+                                        ? language === "ar"
+                                          ? "بريدي"
+                                          : "Postcode"
+                                        : language === "ar"
+                                          ? "منطقة"
+                                          : "Region"}
+                                  </Badge>
+                                </button>
+                              ))}
+                            </div>
+                          </Card>
+                        )}
+                      </div>
+
+                      {/* Search Method Selector */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {language === "ar" ? "طريقة البحث:" : "Search method:"}
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant={searchMethod === "standard" ? "default" : "outline"}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setSearchMethod("standard")}
+                          >
+                            <Database className="w-3 h-3 mr-1" />
+                            {language === "ar" ? "عادي" : "Standard"}
+                          </Button>
+                          <Button
+                            variant={searchMethod === "cached" ? "default" : "outline"}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setSearchMethod("cached")}
+                          >
+                            <Zap className="w-3 h-3 mr-1" />
+                            {language === "ar" ? "مخزن" : "Cached"}
+                          </Button>
+                          <Button
+                            variant={searchMethod === "smart" ? "default" : "outline"}
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setSearchMethod("smart")}
+                          >
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            {language === "ar" ? "ذكي" : "Smart"}
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs ms-auto"
+                          onClick={handleClearCache}
+                          title={language === "ar" ? "مسح ذاكرة التخزين" : "Clear cache"}
+                        >
+                          <Trash2 className="w-3 h-3" />
                         </Button>
                       </div>
+
+                      {/* Search Scope Options */}
+                      <div className="space-y-2 p-3 rounded-lg bg-muted/50">
+                        <div className="text-xs font-medium text-muted-foreground mb-2">
+                          {language === "ar" ? "نطاق البحث" : "Search Scope"}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="bbox-scope" className="text-sm cursor-pointer">
+                            {language === "ar"
+                              ? "استخدام حدود الخريطة المرئية"
+                              : "Use visible map bounds"}
+                          </label>
+                          <Switch
+                            id="bbox-scope"
+                            checked={useBboxScope}
+                            onCheckedChange={setUseBboxScope}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label htmlFor="region-scope" className="text-sm cursor-pointer">
+                            {language === "ar" ? "تصفية حسب المنطقة" : "Filter by region"}
+                          </label>
+                          <Switch
+                            id="region-scope"
+                            checked={useRegionScope}
+                            onCheckedChange={setUseRegionScope}
+                          />
+                        </div>
+                        {useRegionScope && (
+                          <Select
+                            value={selectedRegion || "none"}
+                            onValueChange={(v) => setSelectedRegion(v === "none" ? "" : v)}
+                          >
+                            <SelectTrigger className="text-sm mt-1">
+                              <SelectValue
+                                placeholder={
+                                  language === "ar" ? "اختر منطقة..." : "Select region..."
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                {language === "ar" ? "-- اختر --" : "-- Select --"}
+                              </SelectItem>
+                              <SelectItem value="منطقة الرياض">{t("regions.riyadh")}</SelectItem>
+                              <SelectItem value="منطقة مكة المكرمة">
+                                {t("regions.makkah")}
+                              </SelectItem>
+                              <SelectItem value="المنطقة الشرقية">
+                                {t("regions.eastern")}
+                              </SelectItem>
+                              <SelectItem value="منطقة المدينة المنورة">
+                                {t("regions.madinah")}
+                              </SelectItem>
+                              <SelectItem value="منطقة القصيم">{t("regions.qassim")}</SelectItem>
+                              <SelectItem value="منطقة عسير">{t("regions.asir")}</SelectItem>
+                              <SelectItem value="منطقة جازان">{t("regions.jazan")}</SelectItem>
+                              <SelectItem value="منطقة تبوك">{t("regions.tabuk")}</SelectItem>
+                              <SelectItem value="منطقة حائل">{t("regions.hail")}</SelectItem>
+                              <SelectItem value="منطقة نجران">{t("regions.najran")}</SelectItem>
+                              <SelectItem value="منطقة الجوف">{t("regions.jawf")}</SelectItem>
+                              <SelectItem value="منطقة الباحة">{t("regions.bahah")}</SelectItem>
+                              <SelectItem value="منطقة الحدود الشمالية">
+                                {t("regions.northern")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+
                       {forwardResults.length > 0 && (
                         <ResultsList
                           results={forwardResults}
@@ -772,6 +1001,21 @@ export function Playground() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Bbox Scope Toggle */}
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                        <label htmlFor="house-bbox-scope" className="text-sm cursor-pointer">
+                          {language === "ar"
+                            ? "استخدام حدود الخريطة المرئية"
+                            : "Use visible map bounds"}
+                        </label>
+                        <Switch
+                          id="house-bbox-scope"
+                          checked={useHouseBboxScope}
+                          onCheckedChange={setUseHouseBboxScope}
+                        />
+                      </div>
+
                       <Button
                         onClick={handleHouseNumberSearch}
                         disabled={houseLoading}
